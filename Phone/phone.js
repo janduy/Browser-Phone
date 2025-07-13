@@ -555,6 +555,7 @@ $(document).ready(function () {
     if(options.videoAspectRatio !== undefined) videoAspectRatio = options.videoAspectRatio;
     if(options.NotificationsActive !== undefined) NotificationsActive = options.NotificationsActive;
     if(options.StreamBuffer !== undefined) StreamBuffer = options.StreamBuffer;
+    if(options.MaxDataStoreDays !== undefined) MaxDataStoreDays = options.MaxDataStoreDays;
     if(options.PosterJpegQuality !== undefined) PosterJpegQuality = options.PosterJpegQuality;
     if(options.VideoResampleSize !== undefined) VideoResampleSize = options.VideoResampleSize;
     if(options.RecordingVideoSize !== undefined) RecordingVideoSize = options.RecordingVideoSize;
@@ -794,7 +795,7 @@ function UpdateUI(){
         if(selectedBuddy == null && selectedLine == null) {
             $("#leftContentTable").css("border-right-width", "0px");
         } else {
-            $("#leftContentTable").css("border-right-width", "1px");
+            $("#leftContent").css("border-right-width", "1px");
         }
         $("#rightContent").css("border-right-width", "0px");
     }
@@ -1399,7 +1400,7 @@ function EditBuddyWindow(buddy){
         var constraints = { 
             type: 'base64', 
             size: 'viewport', 
-            format: 'webp',  // png
+            format: 'webp', // png
             quality: 0.5, 
             circle: false 
         }
@@ -1744,10 +1745,9 @@ function InitUi(){
         }
     }
 
-    // Check if you account is created
-    if(profileUserID == null ){
-        ShowMyProfile();
-        return; // Don't load any more, after applying settings, the page must reload.
+    // Ensure profileUserID exists
+    if(profileUserID == null){
+        localDB.setItem("profileUserID", uID());
     }
 
     PopulateBuddyList();
@@ -1959,7 +1959,7 @@ function CreateUserAgent() {
         userAgentString: userAgentStr,
         autoStart: false,
         autoStop: true,
-        register: false,
+        register: true,  // Alterado para true para registrar automaticamente
         noAnswerTimeout: NoAnswerTimeout,
         // sipExtension100rel: // UNSUPPORTED | SUPPORTED | REQUIRED NOTE: rel100 is not supported
         contactParams: {},
@@ -2083,6 +2083,12 @@ function CreateUserAgent() {
         onTransportConnectError(error);
     });
 
+    // Registrar automaticamente após criar o agente
+    if(userAgent) {
+        window.setTimeout(function(){
+            Register();
+        }, 500);
+    }
 }
 
 // Transport Events
@@ -13334,7 +13340,7 @@ function ReformatMessage(str) {
     msg = msg.replace(/(:\(|:\-\(|:o\()/g, String.fromCodePoint(0x1F641));     // :( :-( :o(
     msg = msg.replace(/(;\)|;\-\)|;o\))/g, String.fromCodePoint(0x1F609));     // ;) ;-) ;o)
     msg = msg.replace(/(:'\(|:'\-\()/g, String.fromCodePoint(0x1F62A));        // :'( :'‑(
-    msg = msg.replace(/(:'\(|:'\-\()/g, String.fromCodePoint(0x1F602));        // :') :'‑)
+    msg = msg.replace(/(:'\)|:'\-\()/g, String.fromCodePoint(0x1F602));        // :') :'‑)
     msg = msg.replace(/(:\$)/g, String.fromCodePoint(0x1F633));                // :$
     msg = msg.replace(/(>:\()/g, String.fromCodePoint(0x1F623));               // >:(
     msg = msg.replace(/(:\×)/g, String.fromCodePoint(0x1F618));                // :×

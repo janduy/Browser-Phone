@@ -1,0 +1,48 @@
+{
+  "users": [
+    {
+      "username": "jsilva",
+      "password": "123456",
+      "displayName": "Suporte Telecom",
+      "sipUsername": "1000",
+      "sipPassword": "02bc270fb134d859105ab595dbbe11ed",
+      "wssServer": "phone.voipeasy.com.br",
+      "webSocketPort": "8089",
+      "serverPath": "/ws",
+      "sipDomain": "phone.voipeasy.com.br"
+    },
+    {
+      "username": "user1",
+      "password": "user123",
+      "displayName": "Usuário 1",
+      "sipUsername": "user1",
+      "sipPassword": "user123",
+      "wssServer": "localhost",
+      "webSocketPort": "4443",
+      "serverPath": "/ws",
+      "sipDomain": "voipeasy.com.br"
+    },
+    {
+      "username": "teste",
+      "password": "teste123",
+      "displayName": "Usuário Teste",
+      "sipUsername": "teste",
+      "sipPassword": "teste123",
+      "wssServer": "localhost",
+      "webSocketPort": "4443",
+      "serverPath": "/ws",
+      "sipDomain": "voipeasy.com.br"
+    },
+    {
+      "username": "webrtc",
+      "password": "webrtc123",
+      "displayName": "WebRTC User",
+      "sipUsername": "webrtc",
+      "sipPassword": "webrtc123",
+      "wssServer": "localhost",
+      "webSocketPort": "4443",
+      "serverPath": "/ws",
+      "sipDomain": "voipeasy.com.br"
+    }
+  ]
+} 

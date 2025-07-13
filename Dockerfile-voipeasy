@@ -1,0 +1,149 @@
+#######################################
+# VoIPEasy Browser Phone Dockerfile   #
+#######################################
+# Versão customizada do Browser Phone com melhorias VoIPEasy
+
+FROM debian:bookworm
+
+# Versão do Asterisk
+ENV ASTERISK_VERSION=releases/20
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Instalação de dependências básicas
+RUN apt-get update && apt-get install -y \
+    git \
+    iputils-ping \
+    traceroute \
+    openssl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Download e instalação do Asterisk
+WORKDIR /usr/local/src
+RUN git clone --branch ${ASTERISK_VERSION} --single-branch --depth 1 https://github.com/asterisk/asterisk.git
+
+# Instalação do Asterisk
+WORKDIR /usr/local/src/asterisk
+RUN contrib/scripts/install_prereq install
+RUN ./configure
+RUN make menuselect.makeopts
+RUN menuselect/menuselect \
+    --disable BUILD_NATIVE \
+    --disable-all \
+    --enable chan_bridge_media \
+    --enable chan_rtp \
+    --enable chan_pjsip \
+    --enable bridge_native_rtp \
+    --enable bridge_simple \
+    --enable codec_gsm \
+    --enable codec_a_mu \
+    --enable codec_alaw \
+    --enable codec_ulaw \
+    --enable codec_opus \
+    --enable codec_resample \
+    --enable format_gsm \
+    --enable format_wav \
+    --enable format_wav_gsm \
+    --enable format_pcm \
+    --enable format_ogg_vorbis \
+    --enable format_h264 \
+    --enable format_h263 \
+    --enable func_base64 \
+    --enable func_callerid \
+    --enable func_channel \
+    --enable func_curl \
+    --enable func_cut \
+    --enable func_db \
+    --enable func_logic \
+    --enable func_math \
+    --enable func_sprintf \
+    --enable func_strings \
+    --enable app_confbridge \
+    --enable app_db \
+    --enable app_dial \
+    --enable app_echo \
+    --enable app_exec \
+    --enable app_mixmonitor \
+    --enable app_originate \
+    --enable app_playback \
+    --enable app_playtones \
+    --enable app_queue \
+    --enable app_sendtext \
+    --enable app_stack \
+    --enable app_transfer \
+    --enable app_system \
+    --enable app_verbose \
+    --enable app_voicemail \
+    --enable app_externalivr \
+    --enable pbx_config \
+    --enable pbx_realtime \
+    --enable res_musiconhold \
+    --enable res_http_websocket \
+    --enable res_pjsip \
+    --enable res_pjsip_transport_websocket \
+    menuselect.makeopts
+
+RUN make all
+RUN make install
+RUN make clean
+
+# Configuração de permissões
+RUN chmod -R 750 /var/spool/asterisk
+
+# Limpeza de arquivos temporários
+RUN rm -rf /var/lib/apt/lists/*
+RUN rm -rf /usr/local/src/asterisk
+
+# Configuração do SSL para WebSocket
+RUN mkdir -p /etc/asterisk/crt
+RUN openssl req -new -x509 -days 365 -nodes \
+    -out /etc/asterisk/crt/certificate.pem \
+    -keyout /etc/asterisk/crt/private.pem \
+    -subj "/C=BR/ST=SP/L=Sao Paulo/O=VoIPEasy/OU=DevOps/CN=phone.voipeasy.local"
+
+# Preparação do Browser Phone customizado
+RUN rm -rf /var/lib/asterisk/static-http/*
+
+# Clone do Browser Phone
+WORKDIR /usr/local/src
+RUN git clone https://github.com/InnovateAsterisk/Browser-Phone.git
+
+# Copia arquivos base
+RUN cp -r /usr/local/src/Browser-Phone/Phone/* /var/lib/asterisk/static-http/
+
+# Copia arquivos customizados
+COPY Phone/index.html /var/lib/asterisk/static-http/
+COPY Phone/users.json /var/lib/asterisk/static-http/
+COPY Phone/login.js /var/lib/asterisk/static-http/
+COPY config/* /etc/asterisk/
+
+# Configuração de permissões
+RUN chmod -R 744 /var/lib/asterisk/static-http/*
+
+# Configuração do servidor STUN
+RUN echo "[general]" > /etc/asterisk/rtp.conf && \
+    echo "rtpstart=10000" >> /etc/asterisk/rtp.conf && \
+    echo "rtpend=20000" >> /etc/asterisk/rtp.conf && \
+    echo "icesupport=yes" >> /etc/asterisk/rtp.conf && \
+    echo "stunaddr=177.73.233.120" >> /etc/asterisk/rtp.conf
+
+# Portas expostas
+EXPOSE 5060/udp 8089/tcp 10000-20000/udp
+
+# Healthcheck
+HEALTHCHECK --interval=60s --timeout=10s --retries=3 CMD /usr/sbin/asterisk -rx "core show sysinfo"
+
+# Inicialização
+ENTRYPOINT ["/usr/sbin/asterisk","-f"]
+CMD ["-vvvv"]
+
+# Instruções de uso:
+# 1. Construir a imagem:
+#    docker build -f Dockerfile-voipeasy -t voipeasy-phone:latest .
+#
+# 2. Executar o container:
+#    docker run -t -i -p 5060:5060/udp -p 8089:8089/tcp voipeasy-phone:latest
+#
+# 3. Acessar:
+#    https://localhost:8089/
+#
+# Usuários pré-configurados disponíveis em users.json 
