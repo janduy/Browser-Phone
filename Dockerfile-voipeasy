@@ -2,6 +2,9 @@
 # VoIPEasy Browser Phone Dockerfile   #
 #######################################
 # Versão customizada do Browser Phone com melhorias VoIPEasy
+# Autor: Janduy Silva
+# Data: 13/07/2025
+# Versão: 1.0.0
 
 FROM debian:bookworm
 
